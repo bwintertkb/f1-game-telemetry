@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         //println!("{:?} bytes received from {:?}", len, addr);
         let mut reader = Cursor::new(buf.clone());
         let val: PacketHeader = reader.read_le().unwrap();
-        //println!("ID: {:?}", val.m_packetId);
+        //println!("ID: {:?}", val.m_packetId); //test
         if val.packet_id == 7 {
             let mut reader = Cursor::new(buf.clone());
             let val: PacketHeader = reader.read_le().unwrap();
