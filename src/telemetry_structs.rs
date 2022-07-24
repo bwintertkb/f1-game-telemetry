@@ -388,7 +388,8 @@ pub struct ParticipantData {
     pub my_team: u8,       // My team flag – 1 = My Team, 0 = otherwise
     pub race_number: u8,   // Race number of the car
     pub nationality: u8,   // Nationality of the driver
-    pub name: [char; 32], // TODO should be [char; 48] Name of participant in UTF-8 format – null terminated
+    #[br(little, count = 48)]
+    pub name: Vec<char>, // TODO should be [char; 48] Name of participant in UTF-8 format – null terminated
     // Will be truncated with … (U+2026) if too long
     pub your_telemetry: u8, // The player's UDP setting, 0 = restricted, 1 = public
 }
@@ -403,16 +404,16 @@ impl Default for ParticipantData {
             my_team: 0,
             race_number: 0,
             nationality: 0,
-            name: ['.'; 32],
+            name: Vec::with_capacity(48),
             your_telemetry: 0,
         }
     }
 }
 
 #[derive(Debug, BinRead)]
-struct PacketParticipantsData {
+pub struct PacketParticipantsData {
     pub header: PacketHeader, // Header
-    pub numActiveCars: u8,    // Number of active cars in the data – should match number of
+    pub num_active_cars: u8,  // Number of active cars in the data – should match number of
     // cars on HUD
     pub participants: [ParticipantData; 22],
 }
