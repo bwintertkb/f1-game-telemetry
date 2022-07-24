@@ -12,7 +12,7 @@
 
 #![warn(rust_2018_idioms)]
 use binread::{self, io::Cursor, BinRead, BinReaderExt};
-use f1_game_telemetry::telemetry::{PacketCarStatusData, PacketHeader};
+use f1_game_telemetry::telemetry_structs::{PacketCarStatusData, PacketHeader};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
