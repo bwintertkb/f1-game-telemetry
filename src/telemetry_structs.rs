@@ -389,7 +389,7 @@ pub struct ParticipantData {
     pub race_number: u8,   // Race number of the car
     pub nationality: u8,   // Nationality of the driver
     #[br(little, count = 48)]
-    pub name: Vec<char>, // TODO should be [char; 48] Name of participant in UTF-8 format – null terminated
+    pub name: Vec<char>, // Name of participant in UTF-8 format – null terminated
     // Will be truncated with … (U+2026) if too long
     pub your_telemetry: u8, // The player's UDP setting, 0 = restricted, 1 = public
 }
@@ -416,4 +416,112 @@ pub struct PacketParticipantsData {
     pub num_active_cars: u8,  // Number of active cars in the data – should match number of
     // cars on HUD
     pub participants: [ParticipantData; 22],
+}
+
+#[derive(Debug, BinRead)]
+pub struct CarSetupData {
+    pub front_wing: u8,                 // Front wing aero
+    pub rear_wing: u8,                  // Rear wing aero
+    pub on_throttle: u8,                // Differential adjustment on throttle (percentage)
+    pub off_throttle: u8,               // Differential adjustment off throttle (percentage)
+    pub front_camber: f32,              // Front camber angle (suspension geometry)
+    pub rear_camber: f32,               // Rear camber angle (suspension geometry)
+    pub front_toe: f32,                 // Front toe angle (suspension geometry)
+    pub rear_toe: f32,                  // Rear toe angle (suspension geometry)
+    pub front_suspension: u8,           // Front suspension
+    pub rear_suspension: u8,            // Rear suspension
+    pub front_anti_roll_bar: u8,        // Front anti-roll bar
+    pub rear_anti_roll_bar: u8,         // Front anti-roll bar
+    pub front_suspension_height: u8,    // Front ride height
+    pub rear_suspension_height: u8,     // Rear ride height
+    pub brake_pressure: u8,             // Brake pressure (percentage)
+    pub brake_bias: u8,                 // Brake bias (percentage)
+    pub rear_left_tyre_pressure: f32,   // Rear left tyre pressure (PSI)
+    pub rear_right_tyre_pressure: f32,  // Rear right tyre pressure (PSI)
+    pub front_left_tyre_pressure: f32,  // Front left tyre pressure (PSI)
+    pub front_right_tyre_pressure: f32, // Front right tyre pressure (PSI)
+    pub ballast: u8,                    // Ballast
+    pub fuel_load: f32,                 // Fuel load
+}
+
+impl Default for CarSetupData {
+    fn default() -> Self {
+        CarSetupData {
+            front_wing: 0,
+            rear_wing: 0,
+            on_throttle: 0,
+            off_throttle: 0,
+            front_camber: 0.0,
+            rear_camber: 0.0,
+            front_toe: 0.0,
+            rear_toe: 0.0,
+            front_suspension: 0,
+            rear_suspension: 0,
+            front_anti_roll_bar: 0,
+            rear_anti_roll_bar: 0,
+            front_suspension_height: 0,
+            rear_suspension_height: 0,
+            brake_pressure: 0,
+            brake_bias: 0,
+            rear_left_tyre_pressure: 0.0,
+            rear_right_tyre_pressure: 0.0,
+            front_left_tyre_pressure: 0.0,
+            front_right_tyre_pressure: 0.0,
+            ballast: 0,
+            fuel_load: 0.0,
+        }
+    }
+}
+
+pub struct PacketCarSetupData {
+    pub header: PacketHeader,
+    pub car_setups: [CarSetupData; 22],
+}
+
+#[derive(Debug, BinRead)]
+pub struct CarTelemetryData {
+    pub speed: u16,                         // Speed of car in kilometres per hour
+    pub throttle: f32,                      // Amount of throttle applied (0.0 to 1.0)
+    pub steer: f32,      // Steering (-1.0 (full lock left) to 1.0 (full lock right))
+    pub brake: f32,      // Amount of brake applied (0.0 to 1.0)
+    pub clutch: u8,      // Amount of clutch applied (0 to 100)
+    pub gear: i8,        // Gear selected (1-8, N=0, R=-1)
+    pub engine_rpm: u16, // Engine RPM
+    pub drs: u8,         // 0 = off, 1 = on
+    pub rev_lights_percent: u8, // Rev lights indicator (percentage)
+    pub rev_lights_bit_value: u16, // Rev lights (bit 0 = leftmost LED, bit 14 = rightmost LED)
+    pub brakes_temperature: [u16; 4], // Brakes temperature (celsius)
+    pub tyres_surface_temperature: [u8; 4], // Tyres surface temperature (celsius)
+    pub tyres_inner_temperature: [u8; 4], // Tyres inner temperature (celsius)
+    pub engine_temperature: u16, // Engine temperature (celsius)
+    pub tyres_pressure: [f32; 4], // Tyres pressure (PSI)
+    pub surface_type: [u8; 4], // Driving surface, see appendices
+}
+
+impl Default for CarTelemetryData {
+    fn default() -> Self {
+        CarTelemetryData {
+            speed: 0,
+            throttle: 0.0,
+            steer: 0.0,
+            brake: 0.0,
+            clutch: 0,
+            gear: 0,
+            engine_rpm: 0,
+            drs: 0,
+            rev_lights_percent: 0,
+            rev_lights_bit_value: 0,
+            brakes_temperature: [0; 4],
+            tyres_surface_temperature: [0; 4],
+            tyres_inner_temperature: [0; 4],
+            engine_temperature: 0,
+            tyres_pressure: [0.0; 4],
+            surface_type: [0; 4],
+        }
+    }
+}
+
+pub struct PacketCarTelemetryData {
+    pub header: PacketHeader,
+    pub car_telemetry_data: [CarTelemetryData; 22],
 }
