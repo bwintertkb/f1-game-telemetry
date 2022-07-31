@@ -524,4 +524,11 @@ impl Default for CarTelemetryData {
 pub struct PacketCarTelemetryData {
     pub header: PacketHeader,
     pub car_telemetry_data: [CarTelemetryData; 22],
+    pub mfd_panel_index: u8, // Index of MFD panel open - 255 = MFD closed
+    // Single player, race – 0 = Car setup, 1 = Pits
+    // 2 = Damage, 3 =  Engine, 4 = Temperatures
+    // May vary depending on game mode
+    pub mfd_panel_index_secondary_player: u8, // See above
+    pub suggested_gear: i8,                   // Suggested gear for the player (1-8)
+                                              // 0 if no gear suggested
 }
