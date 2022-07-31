@@ -521,6 +521,7 @@ impl Default for CarTelemetryData {
     }
 }
 
+#[derive(Debug, BinRead)]
 pub struct PacketCarTelemetryData {
     pub header: PacketHeader,
     pub car_telemetry_data: [CarTelemetryData; 22],
@@ -531,4 +532,148 @@ pub struct PacketCarTelemetryData {
     pub mfd_panel_index_secondary_player: u8, // See above
     pub suggested_gear: i8,                   // Suggested gear for the player (1-8)
                                               // 0 if no gear suggested
+}
+
+#[derive(Debug, BinRead)]
+pub struct LobbyInfoData {
+    pub ai_controlled: u8, // Whether the vehicle is AI (1) or Human (0) controlled
+    pub team_id: u8,       // Team id - see appendix (255 if no team currently selected)
+    pub nationality: u8,   // Nationality of the driver
+    #[br(little, count = 48)]
+    pub name: Vec<char>, // Name of participant in UTF-8 format – null terminated
+    // Will be truncated with ... (U+2026) if too long
+    pub car_number: u8,   // Car number of the player
+    pub ready_status: u8, // 0 = not ready, 1 = ready, 2 = spectating
+}
+
+impl Default for LobbyInfoData {
+    fn default() -> Self {
+        LobbyInfoData {
+            ai_controlled: 0,
+            team_id: 0,
+            nationality: 0,
+            name: Vec::with_capacity(48),
+            car_number: 0,
+            ready_status: 0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead)]
+pub struct PacketLobbyInfoData {
+    pub header: PacketHeader,
+    pub num_players: u8,
+    pub lobby_players: [LobbyInfoData; 22],
+}
+
+#[derive(Debug, BinRead)]
+pub struct CarDamageData {
+    pub tyres_wear: [f32; 4],        // Tyre wear (percentage)
+    pub tyres_damage: [u8; 4],       // Tyre damage (percentage)
+    pub brakes_damage: [u8; 4],      // Brakes damage (percentage)
+    pub front_left_wing_damage: u8,  // Front left wing damage (percentage)
+    pub front_right_wing_damage: u8, // Front right wing damage (percentage)
+    pub rear_wing_damage: u8,        // Rear wing damage (percentage)
+    pub floor_damage: u8,            // Floor damage (percentage)
+    pub diffuser_damage: u8,         // Diffuser damage (percentage)
+    pub sidepod_damage: u8,          // Sidepod damage (percentage)
+    pub drs_fault: u8,               // Indicator for DRS fault, 0 = OK, 1 = fault
+    pub ers_fault: u8,               // Indicator for ERS fault, 0 = OK, 1 = fault
+    pub gear_box_damage: u8,         // Gear box damage (percentage)
+    pub engine_damage: u8,           // Engine damage (percentage)
+    pub engine_mguhwear: u8,         // Engine wear MGU-H (percentage)
+    pub engine_eswear: u8,           // Engine wear ES (percentage)
+    pub engine_cewear: u8,           // Engine wear CE (percentage)
+    pub engine_icewear: u8,          // Engine wear ICE (percentage)
+    pub engine_mgukwear: u8,         // Engine wear MGU-K (percentage)
+    pub engine_tcwear: u8,           // Engine wear TC (percentage)
+    pub engine_blown: u8,            // Engine blown, 0 = OK, 1 = fault
+    pub engine_seized: u8,           // Engine seized, 0 = OK, 1 = fault
+}
+impl Default for CarDamageData {
+    fn default() -> Self {
+        CarDamageData {
+            tyres_wear: [0.0; 4],
+            tyres_damage: [0; 4],
+            brakes_damage: [0; 4],
+            front_left_wing_damage: 0,
+            front_right_wing_damage: 0,
+            rear_wing_damage: 0,
+            floor_damage: 0,
+            diffuser_damage: 0,
+            sidepod_damage: 0,
+            drs_fault: 0,
+            ers_fault: 0,
+            gear_box_damage: 0,
+            engine_damage: 0,
+            engine_mguhwear: 0,
+            engine_eswear: 0,
+            engine_cewear: 0,
+            engine_icewear: 0,
+            engine_mgukwear: 0,
+            engine_tcwear: 0,
+            engine_blown: 0,
+            engine_seized: 0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead)]
+pub struct PacketCarDamageData {
+    pub header: PacketHeader,
+    pub car_damage_data: [CarDamageData; 22],
+}
+
+#[derive(Debug, BinRead)]
+pub struct LapHistoryData {
+    pub lap_time_in_ms: u32,     // Lap time in milliseconds
+    pub sector1_time_in_ms: u16, // Sector 1 time in milliseconds
+    pub sector2_time_in_ms: u16, // Sector 2 time in milliseconds
+    pub sector3_time_in_ms: u16, // Sector 3 time in milliseconds
+    pub lap_valid_bit_flags: u8, // 0x01 bit set-lap valid,      0x02 bit set-sector 1 valid
+                                 // 0x04 bit set-sector 2 valid, 0x08 bit set-sector 3 valid
+}
+
+impl Default for LapHistoryData {
+    fn default() -> Self {
+        LapHistoryData {
+            lap_time_in_ms: 0,
+            sector1_time_in_ms: 0,
+            sector2_time_in_ms: 0,
+            sector3_time_in_ms: 0,
+            lap_valid_bit_flags: 0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead)]
+pub struct TyreStintHistoryData {
+    pub end_lap: u8,              // Lap the tyre usage ends on (255 of current tyre)
+    pub tyre_actual_compound: u8, // Actual tyres used by this driver
+    pub tyre_visual_compound: u8, // Visual tyres used by this driver
+}
+
+impl Default for TyreStintHistoryData {
+    fn default() -> Self {
+        TyreStintHistoryData {
+            end_lap: 0,
+            tyre_actual_compound: 0,
+            tyre_visual_compound: 0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead)]
+pub struct PacketSessionHistoryData {
+    pub header: PacketHeader,
+    pub car_idx: u8,               // Index of the car this lap data relates to
+    pub num_laps: u8,              // Num laps in the data (including current partial lap)
+    pub num_tyre_stints: u8,       // Number of tyre stints in the data
+    pub best_lap_time_lap_num: u8, // Lap the best lap time was achieved on
+    pub best_sector1_lap_num: u8,  // Lap the best Sector 1 time was achieved on
+    pub best_sector2_lap_num: u8,  // Lap the best Sector 2 time was achieved on
+    pub best_sector3_lap_num: u8,  // Lap the best Sector 3 time was achieved on
+    #[br(little, count = 100)]
+    pub lap_history_data: Vec<LapHistoryData>,
+    pub tyre_stint_history_data: [TyreStintHistoryData; 8],
 }
