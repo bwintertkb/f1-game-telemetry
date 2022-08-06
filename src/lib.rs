@@ -55,6 +55,15 @@ impl Telemetry {
                 0 => read_telemetry::<PacketMotionData>(buf.clone()),
                 1 => read_telemetry::<PacketSessionData>(buf.clone()),
                 2 => read_telemetry::<PacketLapData>(buf.clone()),
+                3 => {
+                    println!("HIT NUMBER 3");
+                    println!("Full ticket");
+                    let mut reader = Cursor::new(buf.clone());
+                    let pkt_hdr: telemetry::PacketEventData = reader.read_le().unwrap();
+                    println!("PacketHeader: {:?}", pkt_hdr.event_string_code);
+
+                    continue;
+                }
                 4 => read_telemetry::<PacketParticipantsData>(buf.clone()),
                 5 => read_telemetry::<PacketCarSetupData>(buf.clone()),
                 6 => read_telemetry::<PacketCarTelemetryData>(buf.clone()),
@@ -74,6 +83,12 @@ impl Telemetry {
             }
         }
     }
+}
+
+fn chars_to_string(chars: &[char]) -> String {
+    let mut str = String::with_capacity(chars.len());
+    chars.iter().for_each(|c| str.push(*c));
+    str
 }
 
 pub struct TelemetryBuilder {
@@ -179,6 +194,7 @@ impl TelemetryBuilder {
 
     fn as_vec(&self) -> Vec<Option<u8>> {
         vec![
+            Some(3),
             self.car_damage_data,
             self.motion_data,
             self.final_classification_data,

@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use binread::{self, BinRead};
 use serde::{Deserialize, Serialize};
 
@@ -677,6 +679,178 @@ pub struct PacketSessionHistoryData {
     #[br(little, count = 100)]
     pub lap_history_data: Vec<LapHistoryData>,
     pub tyre_stint_history_data: [TyreStintHistoryData; 8],
+}
+
+trait Event {}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventFastestLap {
+    pub vehicle_idx: u8, // Vehicle index of car achieving fastest lap
+    pub lap_time: f32,   // Lap time is in seconds
+}
+
+impl Default for EventFastestLap {
+    fn default() -> Self {
+        EventFastestLap {
+            vehicle_idx: 0,
+            lap_time: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventRetirement {
+    pub vehicle_idx: u8, // Vehicle index of car retiring
+}
+
+impl Default for EventRetirement {
+    fn default() -> Self {
+        EventRetirement { vehicle_idx: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventTeamMateInPits {
+    pub vehicle_idx: u8, // Vehicle index of team mate
+}
+
+impl Default for EventTeamMateInPits {
+    fn default() -> Self {
+        EventTeamMateInPits { vehicle_idx: 0 }
+    }
+}
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventRaceWinner {
+    pub vehicle_idx: u8, // Vehicle index of the race winner
+}
+
+impl Default for EventRaceWinner {
+    fn default() -> Self {
+        EventRaceWinner { vehicle_idx: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventPenalty {
+    pub penalty_type: u8,      // Penalty type – see Appendices
+    pub infringement_type: u8, // Infringement type – see Appendices
+    pub vehicle_idx: u8,       // Vehicle index of the car the penalty is applied to
+    pub other_vehicle_idx: u8, // Vehicle index of the other car involved
+    pub time: u8,              // Time gained, or time spent doing action in seconds
+    pub lap_num: u8,           // Lap the penalty occurred on
+    pub places_gained: u8,     // Number of places gained by this
+}
+
+impl Default for EventPenalty {
+    fn default() -> Self {
+        EventPenalty {
+            penalty_type: 0,
+            infringement_type: 0,
+            vehicle_idx: 0,
+            other_vehicle_idx: 0,
+            time: 0,
+            lap_num: 0,
+            places_gained: 0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventSpeedTrap {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle triggering speed trap
+    pub speed: f32,      // Top speed achieved in kilometres per hour
+    pub is_overall_fastest_in_session: u8, // Overall fastest speed in session = 1, otherwise 0
+    pub is_driver_fastest_in_session: u8, // Fastest speed for driver in session = 1, otherwise 0
+    pub fastest_vehicle_idx_in_session: u8, // Vehicle index of the vehicle that is the fastest
+    // in this session
+    pub fastest_speed_in_session: f32, // Speed of the vehicle that is the fastest
+                                       // in this session
+}
+
+impl Default for EventSpeedTrap {
+    fn default() -> Self {
+        EventSpeedTrap {
+            vehicle_idx: 0,
+            speed: 0.0,
+            is_overall_fastest_in_session: 0,
+            is_driver_fastest_in_session: 0,
+            fastest_vehicle_idx_in_session: 0,
+            fastest_speed_in_session: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventStartLights {
+    pub num_lights: u8, // Number of lights showing
+}
+
+impl Default for EventStartLights {
+    fn default() -> Self {
+        EventStartLights { num_lights: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventDriveThroughPenaltyServed {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle serving drive through
+}
+
+impl Default for EventDriveThroughPenaltyServed {
+    fn default() -> Self {
+        EventDriveThroughPenaltyServed { vehicle_idx: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventStopGoPenaltyServed {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle serving stop go
+}
+
+impl Default for EventStopGoPenaltyServed {
+    fn default() -> Self {
+        EventStopGoPenaltyServed { vehicle_idx: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventFlashback {
+    pub flashback_frame_identifier: u32, // Frame identifier flashed back to
+    pub flashback_session_time: f32,     // Session time flashed back to
+}
+
+impl Default for EventFlashback {
+    fn default() -> Self {
+        EventFlashback {
+            flashback_frame_identifier: 0,
+            flashback_session_time: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct EventButtons {
+    pub button_status: u32, // Bit flags specifying which buttons are being pressed
+                            // currently - see appendices
+}
+
+impl Default for EventButtons {
+    fn default() -> Self {
+        EventButtons { button_status: 0 }
+    }
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub struct PacketEventData {
+    pub header: PacketHeader,         // Header
+    pub event_string_code: [char; 4], // Event string code, see below
+    pub event_details: EventDataDetails, // Event details - should be interpreted differently
+                                      // for each type
+}
+
+#[derive(Debug, BinRead, Serialize, Deserialize)]
+pub enum EventDataDetails {
+    Buttons(EventButtons),
 }
 
 pub enum TelemetryTypes {
