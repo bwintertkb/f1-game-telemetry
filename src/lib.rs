@@ -1,19 +1,23 @@
 use binread::{self, io::Cursor, BinRead, BinReaderExt};
 use serde::Serialize;
+use telemetry::{EventButtons, EventFastestLap, EventFlashback, PacketEventData};
 use tokio::{
     net::UdpSocket,
     sync::mpsc::{UnboundedReceiver, UnboundedSender},
 };
 
 use crate::telemetry::{
-    PacketCarDamageData, PacketCarSetupData, PacketCarStatusData, PacketCarTelemetryData,
-    PacketFinalClassificationData, PacketLapData, PacketLobbyInfoData, PacketMotionData,
-    PacketParticipantsData, PacketSessionData, PacketSessionHistoryData,
+    EventDriveThroughPenaltyServed, EventPenalty, EventRaceWinner, EventRetirement, EventSpeedTrap,
+    EventStartLights, EventStopGoPenaltyServed, EventTeamMateInPits, PacketCarDamageData,
+    PacketCarSetupData, PacketCarStatusData, PacketCarTelemetryData, PacketFinalClassificationData,
+    PacketLapData, PacketLobbyInfoData, PacketMotionData, PacketParticipantsData,
+    PacketSessionData, PacketSessionHistoryData,
 };
 
 pub mod telemetry;
 
 const BUFFER_SIZE: usize = 10024;
+const UNSUPPORTED_EVENT: [&str; 6] = ["SSTA", "SEND", "DRSE", "DRSD", "CHQF", "LGOT"];
 
 pub struct Telemetry {
     endpoint: String,
@@ -25,6 +29,44 @@ fn read_telemetry<T: BinRead + Serialize>(buffer: [u8; BUFFER_SIZE]) -> String {
     let mut reader = Cursor::new(buffer);
     let tel: T = reader.read_le().unwrap();
     serde_json::to_string(&tel).unwrap()
+}
+
+fn read_event_telemetry(buffer: [u8; BUFFER_SIZE]) -> Option<String> {
+    let mut reader = Cursor::new(buffer.clone());
+    let pkt_hdr: PacketEventData<EventFlashback> = reader.read_le().unwrap();
+    let event_type = chars_to_string(&pkt_hdr.event_string_code);
+    if UNSUPPORTED_EVENT.contains(&&event_type[..]) {
+        return None;
+    }
+
+    let tel: Option<String> = match &event_type[..] {
+        "SSTA" => None,
+        "SEND" => None,
+        "FTLP" => Some(read_telemetry::<PacketEventData<EventFastestLap>>(buffer)),
+        "RTMT" => Some(read_telemetry::<PacketEventData<EventRetirement>>(buffer)),
+        "DRSE" => None,
+        "DRSD" => None,
+        "TMPT" => Some(read_telemetry::<PacketEventData<EventTeamMateInPits>>(
+            buffer,
+        )),
+        "CHQF" => None,
+        "RCWN" => Some(read_telemetry::<PacketEventData<EventRaceWinner>>(buffer)),
+        "PENA" => Some(read_telemetry::<PacketEventData<EventPenalty>>(buffer)),
+        "SPTP" => Some(read_telemetry::<PacketEventData<EventSpeedTrap>>(buffer)),
+        "STLG" => Some(read_telemetry::<PacketEventData<EventStartLights>>(buffer)),
+        "LGOT" => None,
+        "DTSV" => Some(read_telemetry::<
+            PacketEventData<EventDriveThroughPenaltyServed>,
+        >(buffer)),
+        "SGSV" => Some(read_telemetry::<PacketEventData<EventStopGoPenaltyServed>>(
+            buffer,
+        )),
+        "FLBK" => Some(read_telemetry::<PacketEventData<EventFlashback>>(buffer)),
+        "BUTN" => Some(read_telemetry::<PacketEventData<EventButtons>>(buffer)),
+        _ => None,
+    };
+
+    tel
 }
 
 impl Telemetry {
@@ -43,7 +85,7 @@ impl Telemetry {
         println!("Listening on: {}", socket.local_addr().unwrap());
         let mut buf: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
         loop {
-            let len = socket.recv(&mut buf).await.unwrap();
+            socket.recv(&mut buf).await.unwrap();
 
             let mut reader = Cursor::new(buf.clone());
             let pkt_hdr: telemetry::PacketHeader = reader.read_le().unwrap();
@@ -55,15 +97,10 @@ impl Telemetry {
                 0 => read_telemetry::<PacketMotionData>(buf.clone()),
                 1 => read_telemetry::<PacketSessionData>(buf.clone()),
                 2 => read_telemetry::<PacketLapData>(buf.clone()),
-                3 => {
-                    println!("HIT NUMBER 3");
-                    println!("Full ticket");
-                    let mut reader = Cursor::new(buf.clone());
-                    let pkt_hdr: telemetry::PacketEventData = reader.read_le().unwrap();
-                    println!("PacketHeader: {:?}", pkt_hdr.event_string_code);
-
-                    continue;
-                }
+                3 => match read_event_telemetry(buf.clone()) {
+                    Some(tel) => tel,
+                    None => continue,
+                },
                 4 => read_telemetry::<PacketParticipantsData>(buf.clone()),
                 5 => read_telemetry::<PacketCarSetupData>(buf.clone()),
                 6 => read_telemetry::<PacketCarTelemetryData>(buf.clone()),
@@ -93,6 +130,7 @@ fn chars_to_string(chars: &[char]) -> String {
 
 pub struct TelemetryBuilder {
     endpoint: String,
+    events_data: Option<u8>,
     car_status_data: Option<u8>,
     motion_data: Option<u8>,
     final_classification_data: Option<u8>,
@@ -109,6 +147,7 @@ impl TelemetryBuilder {
     pub fn new(endpoint: String) -> Self {
         TelemetryBuilder {
             endpoint,
+            events_data: None,
             car_status_data: None,
             motion_data: None,
             final_classification_data: None,
@@ -121,6 +160,11 @@ impl TelemetryBuilder {
             car_damage_data: None,
             session_history_data: None,
         }
+    }
+
+    pub fn add_events_data(mut self) -> Self {
+        self.events_data = Some(3);
+        self
     }
 
     pub fn add_car_status_data(mut self) -> Self {
@@ -192,9 +236,9 @@ impl TelemetryBuilder {
             .add_session_history_data()
     }
 
-    fn as_vec(&self) -> Vec<Option<u8>> {
-        vec![
-            Some(3),
+    fn as_array(&self) -> [Option<u8>; 12] {
+        [
+            self.events_data,
             self.car_damage_data,
             self.motion_data,
             self.final_classification_data,
@@ -210,7 +254,7 @@ impl TelemetryBuilder {
     }
 
     pub fn build(self) -> Telemetry {
-        let data = self.as_vec().into_iter().flatten().collect();
+        let data = self.as_array().into_iter().flatten().collect();
         Telemetry {
             endpoint: self.endpoint,
             data,

@@ -681,13 +681,15 @@ pub struct PacketSessionHistoryData {
     pub tyre_stint_history_data: [TyreStintHistoryData; 8],
 }
 
-trait Event {}
+pub trait Event {}
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
 pub struct EventFastestLap {
     pub vehicle_idx: u8, // Vehicle index of car achieving fastest lap
     pub lap_time: f32,   // Lap time is in seconds
 }
+
+impl Event for EventFastestLap {}
 
 impl Default for EventFastestLap {
     fn default() -> Self {
@@ -703,6 +705,8 @@ pub struct EventRetirement {
     pub vehicle_idx: u8, // Vehicle index of car retiring
 }
 
+impl Event for EventRetirement {}
+
 impl Default for EventRetirement {
     fn default() -> Self {
         EventRetirement { vehicle_idx: 0 }
@@ -714,6 +718,8 @@ pub struct EventTeamMateInPits {
     pub vehicle_idx: u8, // Vehicle index of team mate
 }
 
+impl Event for EventTeamMateInPits {}
+
 impl Default for EventTeamMateInPits {
     fn default() -> Self {
         EventTeamMateInPits { vehicle_idx: 0 }
@@ -723,6 +729,8 @@ impl Default for EventTeamMateInPits {
 pub struct EventRaceWinner {
     pub vehicle_idx: u8, // Vehicle index of the race winner
 }
+
+impl Event for EventRaceWinner {}
 
 impl Default for EventRaceWinner {
     fn default() -> Self {
@@ -740,6 +748,8 @@ pub struct EventPenalty {
     pub lap_num: u8,           // Lap the penalty occurred on
     pub places_gained: u8,     // Number of places gained by this
 }
+
+impl Event for EventPenalty {}
 
 impl Default for EventPenalty {
     fn default() -> Self {
@@ -767,6 +777,8 @@ pub struct EventSpeedTrap {
                                        // in this session
 }
 
+impl Event for EventSpeedTrap {}
+
 impl Default for EventSpeedTrap {
     fn default() -> Self {
         EventSpeedTrap {
@@ -785,6 +797,8 @@ pub struct EventStartLights {
     pub num_lights: u8, // Number of lights showing
 }
 
+impl Event for EventStartLights {}
+
 impl Default for EventStartLights {
     fn default() -> Self {
         EventStartLights { num_lights: 0 }
@@ -795,6 +809,8 @@ impl Default for EventStartLights {
 pub struct EventDriveThroughPenaltyServed {
     pub vehicle_idx: u8, // Vehicle index of the vehicle serving drive through
 }
+
+impl Event for EventDriveThroughPenaltyServed {}
 
 impl Default for EventDriveThroughPenaltyServed {
     fn default() -> Self {
@@ -807,6 +823,8 @@ pub struct EventStopGoPenaltyServed {
     pub vehicle_idx: u8, // Vehicle index of the vehicle serving stop go
 }
 
+impl Event for EventStopGoPenaltyServed {}
+
 impl Default for EventStopGoPenaltyServed {
     fn default() -> Self {
         EventStopGoPenaltyServed { vehicle_idx: 0 }
@@ -818,6 +836,8 @@ pub struct EventFlashback {
     pub flashback_frame_identifier: u32, // Frame identifier flashed back to
     pub flashback_session_time: f32,     // Session time flashed back to
 }
+
+impl Event for EventFlashback {}
 
 impl Default for EventFlashback {
     fn default() -> Self {
@@ -834,6 +854,8 @@ pub struct EventButtons {
                             // currently - see appendices
 }
 
+impl Event for EventButtons {}
+
 impl Default for EventButtons {
     fn default() -> Self {
         EventButtons { button_status: 0 }
@@ -841,28 +863,11 @@ impl Default for EventButtons {
 }
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
-pub struct PacketEventData {
+pub struct PacketEventData<T>
+where
+    T: BinRead<Args = ()> + Serialize + Event,
+{
     pub header: PacketHeader,         // Header
     pub event_string_code: [char; 4], // Event string code, see below
-    pub event_details: EventDataDetails, // Event details - should be interpreted differently
-                                      // for each type
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
-pub enum EventDataDetails {
-    Buttons(EventButtons),
-}
-
-pub enum TelemetryTypes {
-    CarStatus(PacketCarStatusData),
-    Motion(PacketMotionData),
-    FinalClassification(PacketFinalClassificationData),
-    Session(PacketSessionData),
-    LapData(PacketLapData),
-    Participants(PacketParticipantsData),
-    CarSetup(PacketCarSetupData),
-    CarTelemetry(PacketCarTelemetryData),
-    LobbyInfo(PacketLobbyInfoData),
-    CarDamage(PacketCarDamageData),
-    SessionHistory(PacketSessionHistoryData),
+    pub event: T,
 }

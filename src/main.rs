@@ -46,11 +46,13 @@ use tokio::net::UdpSocket;
 #[tokio::main] //this is a test
 async fn main() {
     let endpoint = "127.0.0.1:30500";
-    let mut tel = TelemetryBuilder::new(endpoint.to_owned()).build();
+    let mut tel = TelemetryBuilder::new(endpoint.to_owned())
+        .add_events_data()
+        .build();
     let mut rec = tel.record().await;
     while let Some(val) = rec.recv().await {
         let val: Value = serde_json::from_str(&val).unwrap();
-        //println!("RECEIVED: {}", val);
+        println!("RECEIVED: {}", val);
     }
 
     // let addr = env::args()
