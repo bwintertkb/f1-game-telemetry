@@ -1,7 +1,9 @@
-#F1-game-telemetry library
+# F1-game-telemetry library
+
 Choose the telemetry data you want to record from the F1 video game.
 
-###Example main.rs
+### Example main.rs
+
 Below is an example of how you would use this library.
 
 ```rust
@@ -25,8 +27,10 @@ async fn main() {
 
 ```
 
-###License
+### License
+
 This library is licensed under the [MIT License](https://opensource.org/licenses/MIT)
 
-###github
+### github
+
 Please check out my [github](https://github.com/bwintertkb)! Thank you!
