@@ -1,3 +1,4 @@
+//! Structs which define the datasets provided by F1 developers
 use std::fmt::Debug;
 
 use binread::{self, BinRead};
