@@ -27,3 +27,6 @@ async fn main() {
 
 ###License
 This library is licensed under the [MIT License](https://opensource.org/licenses/MIT)
+
+###github
+Please check out my [github](https://github.com/bwintertkb)! Thank you!

@@ -226,7 +226,7 @@ impl Default for MarshalZone {
     }
 }
 
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct WeatherForecastSample {
     pub session_type: u8, // 0 = unknown, 1 = P1, 2 = P2, 3 = P3, 4 = Short P, 5 = Q1
     // 6 = Q2, 7 = Q3, 8 = Short Q, 9 = OSQ, 10 = R, 11 = R2
@@ -239,21 +239,6 @@ pub struct WeatherForecastSample {
     pub air_temperature: i8,          // Air temp. in degrees celsius
     pub air_temperature_change: i8,   // Air temp. change – 0 = up, 1 = down, 2 = no change
     pub rain_percentage: u8,          // Rain percentage (0-100)
-}
-
-impl Default for WeatherForecastSample {
-    fn default() -> Self {
-        WeatherForecastSample {
-            session_type: 0,
-            time_offset: 0,
-            weather: 0,
-            track_temperature: 0,
-            track_temperature_change: 0,
-            air_temperature: 0,
-            air_temperature_change: 0,
-            rain_percentage: 0,
-        }
-    }
 }
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
@@ -628,7 +613,7 @@ pub struct PacketCarDamageData {
     pub car_damage_data: [CarDamageData; 22],
 }
 
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct LapHistoryData {
     pub lap_time_in_ms: u32,     // Lap time in milliseconds
     pub sector1_time_in_ms: u16, // Sector 1 time in milliseconds
@@ -638,33 +623,11 @@ pub struct LapHistoryData {
                                  // 0x04 bit set-sector 2 valid, 0x08 bit set-sector 3 valid
 }
 
-impl Default for LapHistoryData {
-    fn default() -> Self {
-        LapHistoryData {
-            lap_time_in_ms: 0,
-            sector1_time_in_ms: 0,
-            sector2_time_in_ms: 0,
-            sector3_time_in_ms: 0,
-            lap_valid_bit_flags: 0,
-        }
-    }
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct TyreStintHistoryData {
     pub end_lap: u8,              // Lap the tyre usage ends on (255 of current tyre)
     pub tyre_actual_compound: u8, // Actual tyres used by this driver
     pub tyre_visual_compound: u8, // Visual tyres used by this driver
-}
-
-impl Default for TyreStintHistoryData {
-    fn default() -> Self {
-        TyreStintHistoryData {
-            end_lap: 0,
-            tyre_actual_compound: 0,
-            tyre_visual_compound: 0,
-        }
-    }
 }
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
@@ -701,45 +664,28 @@ impl Default for EventFastestLap {
     }
 }
 
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventRetirement {
     pub vehicle_idx: u8, // Vehicle index of car retiring
 }
 
 impl Event for EventRetirement {}
 
-impl Default for EventRetirement {
-    fn default() -> Self {
-        EventRetirement { vehicle_idx: 0 }
-    }
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventTeamMateInPits {
     pub vehicle_idx: u8, // Vehicle index of team mate
 }
 
 impl Event for EventTeamMateInPits {}
 
-impl Default for EventTeamMateInPits {
-    fn default() -> Self {
-        EventTeamMateInPits { vehicle_idx: 0 }
-    }
-}
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventRaceWinner {
     pub vehicle_idx: u8, // Vehicle index of the race winner
 }
 
 impl Event for EventRaceWinner {}
 
-impl Default for EventRaceWinner {
-    fn default() -> Self {
-        EventRaceWinner { vehicle_idx: 0 }
-    }
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventPenalty {
     pub penalty_type: u8,      // Penalty type – see Appendices
     pub infringement_type: u8, // Infringement type – see Appendices
@@ -751,20 +697,6 @@ pub struct EventPenalty {
 }
 
 impl Event for EventPenalty {}
-
-impl Default for EventPenalty {
-    fn default() -> Self {
-        EventPenalty {
-            penalty_type: 0,
-            infringement_type: 0,
-            vehicle_idx: 0,
-            other_vehicle_idx: 0,
-            time: 0,
-            lap_num: 0,
-            places_gained: 0,
-        }
-    }
-}
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
 pub struct EventSpeedTrap {
@@ -793,44 +725,26 @@ impl Default for EventSpeedTrap {
     }
 }
 
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventStartLights {
     pub num_lights: u8, // Number of lights showing
 }
 
 impl Event for EventStartLights {}
 
-impl Default for EventStartLights {
-    fn default() -> Self {
-        EventStartLights { num_lights: 0 }
-    }
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventDriveThroughPenaltyServed {
     pub vehicle_idx: u8, // Vehicle index of the vehicle serving drive through
 }
 
 impl Event for EventDriveThroughPenaltyServed {}
 
-impl Default for EventDriveThroughPenaltyServed {
-    fn default() -> Self {
-        EventDriveThroughPenaltyServed { vehicle_idx: 0 }
-    }
-}
-
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventStopGoPenaltyServed {
     pub vehicle_idx: u8, // Vehicle index of the vehicle serving stop go
 }
 
 impl Event for EventStopGoPenaltyServed {}
-
-impl Default for EventStopGoPenaltyServed {
-    fn default() -> Self {
-        EventStopGoPenaltyServed { vehicle_idx: 0 }
-    }
-}
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
 pub struct EventFlashback {
@@ -849,19 +763,13 @@ impl Default for EventFlashback {
     }
 }
 
-#[derive(Debug, BinRead, Serialize, Deserialize)]
+#[derive(Debug, Default, BinRead, Serialize, Deserialize)]
 pub struct EventButtons {
     pub button_status: u32, // Bit flags specifying which buttons are being pressed
                             // currently - see appendices
 }
 
 impl Event for EventButtons {}
-
-impl Default for EventButtons {
-    fn default() -> Self {
-        EventButtons { button_status: 0 }
-    }
-}
 
 #[derive(Debug, BinRead, Serialize, Deserialize)]
 pub struct PacketEventData<T>

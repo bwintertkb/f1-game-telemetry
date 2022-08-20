@@ -4,10 +4,7 @@ use binread::{self, io::Cursor, BinRead, BinReaderExt};
 use error_stack::{IntoReport, Report, Result, ResultExt};
 use serde::Serialize;
 use telemetry::{EventButtons, EventFastestLap, EventFlashback, PacketEventData};
-use tokio::{
-    net::UdpSocket,
-    sync::mpsc::{UnboundedReceiver, UnboundedSender},
-};
+use tokio::{net::UdpSocket, sync::mpsc::UnboundedSender};
 
 use crate::{
     errors::TelemetryError,
@@ -26,12 +23,13 @@ pub mod telemetry;
 const BUFFER_SIZE: usize = 10024;
 const UNSUPPORTED_EVENT: [&str; 6] = ["SSTA", "SEND", "DRSE", "DRSD", "CHQF", "LGOT"];
 
+/// Telemetry object. Used to record data from the F1 game and pass it through via channels.
 pub struct Telemetry {
     endpoint: String,
     data: Vec<u8>,
-    pub listener: Option<UnboundedReceiver<Vec<String>>>,
 }
 
+/// Records the telemetry data.
 fn read_telemetry<T: BinRead + Serialize>(
     buffer: [u8; BUFFER_SIZE],
 ) -> error_stack::Result<String, TelemetryError> {
@@ -46,6 +44,7 @@ fn read_telemetry<T: BinRead + Serialize>(
     Ok(data)
 }
 
+/// Records the telemetry event data.
 fn read_event_telemetry(buffer: [u8; BUFFER_SIZE]) -> Result<Option<String>, TelemetryError> {
     let mut reader = Cursor::new(buffer);
     let pkt_hdr: PacketEventData<EventFlashback> = reader
@@ -88,6 +87,7 @@ fn read_event_telemetry(buffer: [u8; BUFFER_SIZE]) -> Result<Option<String>, Tel
 }
 
 impl Telemetry {
+    /// Spawns an asynchronous task which is used to record the F1 game data. The data is then transmitted via channels.
     pub async fn record(&mut self, tx: UnboundedSender<String>) {
         tokio::spawn(Telemetry::transmitter(
             tx,
@@ -98,11 +98,9 @@ impl Telemetry {
 
     async fn transmitter(tx: UnboundedSender<String>, endpoint: String, data: Vec<u8>) {
         let socket = UdpSocket::bind(&endpoint).await.unwrap();
-        println!("Listening on: {}", socket.local_addr().unwrap());
         let mut buf: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
         loop {
             socket.recv(&mut buf).await.unwrap();
-            println!("BUFFER: {:?}", buf);
             let mut reader = Cursor::new(buf);
             let pkt_hdr: telemetry::PacketHeader = reader.read_le().unwrap();
             if !data.contains(&pkt_hdr.packet_id) {
@@ -133,8 +131,7 @@ impl Telemetry {
             };
             match tx.send(tel) {
                 Ok(_) => continue,
-                Err(e) => {
-                    println!("ERROR: {}", e);
+                Err(_) => {
                     continue;
                 }
             }
@@ -148,6 +145,7 @@ fn chars_to_string(chars: &[char]) -> String {
     str
 }
 
+/// Telemetry object builder. Choose the data that you want to record.
 pub struct TelemetryBuilder {
     endpoint: String,
     events_data: Option<u8>,
@@ -278,7 +276,6 @@ impl TelemetryBuilder {
         Telemetry {
             endpoint: self.endpoint,
             data,
-            listener: None,
         }
     }
 }
