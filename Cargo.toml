@@ -1,7 +1,11 @@
 [package]
 name = "f1_game_telemetry"
+authors = ["bwinter"]
 version = "0.1.0"
 edition = "2021"
+description = "Record telemetry data in the F1 video games."
+license = "MIT"
+repository = "https://github.com/bwintertkb/f1-game-telemetry"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,3 +21,9 @@ tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = {version = "0.17.1", features = ["native-tls"]}
 tungstenite = "0.17.2"
 url = "2.2.2"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
